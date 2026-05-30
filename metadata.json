@@ -1,0 +1,8 @@
+{
+  "name": "Introd",
+  "description": "A trust-first network and jobs platform for the African founders diaspora.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

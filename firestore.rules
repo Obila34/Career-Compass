@@ -1,0 +1,53 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Helper Functions
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    
+    // We deny all by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    match /users/{userId} {
+      // Basic rules: Any signed-in user can read basic profiles to show the network
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) 
+        && incoming().keys().hasAll(['uid', 'email', 'createdAt'])
+        && incoming().uid == userId;
+      allow update: if isOwner(userId)
+        && incoming().uid == existing().uid; // immutable uid
+    }
+
+    match /connections/{connectionId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && (incoming().userA == request.auth.uid || incoming().userB == request.auth.uid);
+      allow update: if isSignedIn()
+        && (existing().userA == request.auth.uid || existing().userB == request.auth.uid);
+    }
+
+    match /introRequests/{requestId} {
+      allow read: if isSignedIn() 
+        && (resource.data.requesterId == request.auth.uid || resource.data.targetId == request.auth.uid);
+      allow create: if isSignedIn() && incoming().requesterId == request.auth.uid;
+      allow update: if isSignedIn() && (existing().requesterId == request.auth.uid || existing().targetId == request.auth.uid);
+    }
+
+    match /jobs/{jobId} {
+      // All verified users can read approved jobs
+      allow read: if isSignedIn(); 
+      // Only system functions (like job-scraper) can write using Admin SDK, which bypasses rules.
+      allow write: if false; 
+    }
+
+    match /reviews/{reviewId} {
+      allow read: if false; // Only admins via dashboard
+      allow create: if isSignedIn() && incoming().reviewerId == request.auth.uid;
+    }
+  }
+}

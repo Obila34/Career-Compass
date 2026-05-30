@@ -1,0 +1,18 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Founder Profile",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profiles"
+    }
+  }
+}
