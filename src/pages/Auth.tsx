@@ -32,8 +32,8 @@ export default function Auth() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-orange-900/30 rounded-full blur-[150px] pointer-events-none"></div>
 
       <div className="w-full max-w-md bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-8 relative z-10">
-        <h1 className="text-2xl font-bold mb-2 text-center text-white">Welcome to Introd</h1>
-        <p className="text-slate-400 text-center text-sm mb-8">The trust-first network for the African founders diaspora.</p>
+        <h1 className="text-2xl font-bold mb-2 text-center text-white">Welcome to Introd Career Compass</h1>
+        <p className="text-slate-400 text-center text-sm mb-8">The trust-first career mobility platform for the African diaspora.</p>
         
         <button 
           onClick={handleSignIn}

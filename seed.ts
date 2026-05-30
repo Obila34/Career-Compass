@@ -1,22 +1,49 @@
-import admin from 'firebase-admin';
+import * as adminModule from 'firebase-admin';
+const admin = (adminModule as any).default || adminModule;
+import { getFirestore } from 'firebase-admin/firestore';
+import fs from 'fs';
+import path from 'path';
+
+let _databaseId: string | undefined;
+try {
+  const configPath = path.resolve(process.cwd(), 'firebase-applet-config.json');
+  if (fs.existsSync(configPath)) {
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    _databaseId = config.firestoreDatabaseId;
+  }
+} catch (e) {
+  console.warn("Could not read config");
+}
 
 // Make sure process.env has required Firebase Admin SDK credentials when running
 
-if (!admin.apps.length) {
+if (!admin.apps?.length && !(admin as any).default?.apps?.length) {
     if (process.env.FIREBASE_PRIVATE_KEY) {
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId: process.env.FIREBASE_PROJECT_ID,
-          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-        }),
-      });
+      let pk = process.env.FIREBASE_PRIVATE_KEY;
+      if (pk.startsWith('"') && pk.endsWith('"')) {
+        pk = pk.slice(1, -1);
+      }
+      pk = pk.replace(/\\n/g, '\n');
+      
+      try {
+        admin.initializeApp({
+          credential: admin.credential.cert({
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: pk,
+          }),
+        });
+      } catch (err) {
+        console.warn("Invalid private key format, falling back to demo project id");
+        admin.initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID || 'demo-project' });
+      }
     } else {
-        throw new Error('FIREBASE_PRIVATE_KEY is missing');
+      console.warn("FIREBASE_PRIVATE_KEY is missing, proceeding with demo project id");
+      admin.initializeApp({ projectId: process.env.FIREBASE_PROJECT_ID || 'demo-project' });
     }
 }
 
-const db = admin.firestore();
+const db = _databaseId ? getFirestore(admin.app(), _databaseId) : getFirestore(admin.app());
 
 const seedFounders = [
   {

@@ -1,5 +1,5 @@
 // src/lib/ai/draftIntroMessage.ts
-import { VertexAI } from "@google-cloud/vertexai";
+import { GoogleGenAI } from "@google/genai";
 import { User } from "../../types/index";
 
 export async function draftIntroMessage(
@@ -9,15 +9,10 @@ export async function draftIntroMessage(
   sharedContext: string[],
   requesterIntent: string
 ) {
-  const project = process.env.GOOGLE_CLOUD_PROJECT;
-  const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+      
   
-  if (!project) {
-    throw new Error("GOOGLE_CLOUD_PROJECT env var is missing");
-  }
-
-  const vertexai = new VertexAI({ project, location });
-  const model = vertexai.getGenerativeModel({ model: "gemini-2.5-pro-preview-0409" });
+  const ai = new GoogleGenAI({});
+  const modelId = "gemini-2.5-flash";
 
   const prompt = `
 You are writing a warm introduction message for an African diaspora founders platform.
@@ -41,6 +36,6 @@ Rules:
 Return ONLY the message text. No labels, no JSON, no explanation.
   `.trim();
 
-  const result = await model.generateContent(prompt);
-  return result.response.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+  const result = await ai.models.generateContent({ model: modelId, contents: prompt });
+  return result.text?.trim() || '';
 }

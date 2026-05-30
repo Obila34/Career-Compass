@@ -1,51 +1,57 @@
 import { Timestamp } from "firebase/firestore";
 
+export interface ExperienceItem {
+  title: string;
+  company: string;
+  startYear: number | null;
+  endYear: number | null;
+  isCurrent: boolean;
+  description?: string;
+}
+
+export interface EducationItem {
+  institution: string;
+  degree: string | null;
+  graduationYear: number | null;
+}
+
 export interface User {
+  id?: string;
   uid: string;
   displayName: string;
   email: string;
   photoURL: string;
-  headline: string;
+  headline: string;                    // "Senior Product Manager | Fintech"
   bio: string;
-  startupName: string;
-  startupStage: "idea" | "pre-seed" | "seed" | "series-a" | "growth" | string;
-  sector: string[];
-  originCity: string;
+  currentRole: string;
+  currentCompany: string;
   currentCity: string;
   currentCountry: string;
-  diasporaHub: "usa" | "uk" | "canada" | "uae" | "kenya" | "other" | string;
-  accelerators: string[];
+  originCity: string;
+  diasporaHub: string;
+  startupName?: string;
+  startupStage?: string;
+  sector?: string;
+  accelerators?: string[];
+  skills: string[];
+  industries: string[];
+  seniority: "entry"|"mid"|"senior"|"lead"|"executive";
+  yearsOfExperience: number;
+  salaryExpectationUSD: number;
+  openToRoles: boolean;
+  lookingFor: string[];
+  locationPreferences: string[];
+  experience: ExperienceItem[];
+  education: EducationItem[];
+  certifications: string[];
+  languages: string[];
   linkedinUrl: string;
-  twitterUrl: string;
-  websiteUrl: string;
-  lookingFor: Array<"investor" | "cofounder" | "customer" | "advisor" | "talent" | string>;
+  cvUrl: string;                       // Firebase Storage URL
+  profileEmbedding?: number[];          // 768-dim for job matching
   isVerified: boolean;
-  profileEmbedding: number[];
+  profileCompleteness: number;         // 0-100 score
   createdAt: Timestamp;
   updatedAt: Timestamp;
-}
-
-export interface Connection {
-  id?: string;
-  userA: string;
-  userB: string;
-  strength: number;
-  sharedContext: string[];
-  status: "pending" | "connected" | "declined";
-  initiatedBy: string;
-  createdAt: Timestamp;
-}
-
-export interface IntroRequest {
-  id?: string;
-  requesterId: string;
-  targetId: string;
-  connectorsPath: string[];
-  pathStrength: number;
-  aiExplanation: string;
-  draftMessage: string;
-  status: "draft" | "sent" | "accepted" | "declined";
-  createdAt: Timestamp;
 }
 
 export interface Job {
@@ -53,23 +59,30 @@ export interface Job {
   title: string;
   company: string;
   companyWebsite: string;
+  companyLogoUrl?: string;
   location: string;
-  locationType: "remote" | "hybrid" | "onsite";
-  salaryMin: number;
-  salaryMax: number;
+  locationType: "remote"|"hybrid"|"onsite";
+  salaryMin: number | null;
+  salaryMax: number | null;
   salaryCurrency: string;
   description: string;
+  requirements: string[];
   applyUrl: string;
-  source: string;
+  source: "lever"|"greenhouse"|"ashby"|"remotive"|"manual"|string;
   scrapedAt: Timestamp;
   postedAt: Timestamp;
+  expiresAt?: Timestamp;
   legitimacyScore: number;
   legitimacyFlags: string[];
-  vetStatus: "pending" | "approved" | "rejected";
-  vetReviewedBy?: string;
-  vetReviewedAt?: Timestamp;
+  legitimacyVerdict: "approve"|"review"|"reject";
+  legitimacyReasoning: string;
+  vetStatus: "pending"|"approved"|"rejected";
+  vetReviewedBy?: string | null;
+  vetReviewedAt?: Timestamp | null;
   jobEmbedding?: number[];
-  warmPathUsers: string[];
+  networkInsiders: string[];           // userIds who work at this company
+  applicationCount?: number;
+  isActive?: boolean;
 }
 
 export interface Review {
@@ -80,3 +93,4 @@ export interface Review {
   note: string;
   createdAt: Timestamp;
 }
+

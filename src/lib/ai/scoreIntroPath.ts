@@ -1,5 +1,5 @@
 // src/lib/ai/scoreIntroPath.ts
-import { VertexAI } from "@google-cloud/vertexai";
+import { GoogleGenAI } from "@google/genai";
 import { User } from "../../types/index";
 
 export async function scoreIntroPath(
@@ -7,15 +7,10 @@ export async function scoreIntroPath(
   target: Partial<User>,
   connectors: Partial<User>[]
 ) {
-  const project = process.env.GOOGLE_CLOUD_PROJECT;
-  const location = process.env.GOOGLE_CLOUD_LOCATION || 'us-central1';
+      
   
-  if (!project) {
-    throw new Error("GOOGLE_CLOUD_PROJECT env var is missing");
-  }
-
-  const vertexai = new VertexAI({ project, location });
-  const model = vertexai.getGenerativeModel({ model: "gemini-2.5-pro-preview-0409" });
+  const ai = new GoogleGenAI({});
+  const modelId = "gemini-2.5-flash";
 
   const prompt = `
 You are the AI engine for Introd, a platform that facilitates warm introductions between African diaspora founders.
@@ -24,7 +19,7 @@ You are the AI engine for Introd, a platform that facilitates warm introductions
 Name: ${requester.displayName}
 City: ${requester.currentCity}, Origin: ${requester.originCity}
 Startup: ${requester.startupName} (${requester.startupStage})
-Sector: ${(requester.sector || []).join(", ")}
+Sector: ${requester.sector || "none"}
 Accelerators: ${(requester.accelerators || []).join(", ") || "none"}
 Looking for: ${(requester.lookingFor || []).join(", ")}
 </requester>
@@ -33,7 +28,7 @@ Looking for: ${(requester.lookingFor || []).join(", ")}
 Name: ${target.displayName}
 City: ${target.currentCity}, Origin: ${target.originCity}
 Startup: ${target.startupName} (${target.startupStage})
-Sector: ${(target.sector || []).join(", ")}
+Sector: ${target.sector || "none"}
 Accelerators: ${(target.accelerators || []).join(", ") || "none"}
 </target>
 
@@ -54,8 +49,8 @@ Return ONLY valid JSON. No preamble or explanation.
 }
   `.trim();
 
-  const result = await model.generateContent(prompt);
-  const text = result.response.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
+  const result = await ai.models.generateContent({ model: modelId, contents: prompt });
+  const text = result.text || '{}';
   const cleanJson = text.replace(/^```json/, '').replace(/```$/, '').trim();
   return JSON.parse(cleanJson);
 }

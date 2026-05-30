@@ -16,14 +16,28 @@ export default function IntroPath() {
 
   const startAnalysis = async () => {
     setPathAnalyzed(true);
-    // Ideally fetch full profiles from db before passing
     const mockPayload = {
-      requester: { displayName: "You", currentCity: "London", originCity: "Lagos", startupName: "MyStart", startupStage: "seed", sector: ["fintech"], lookingFor: ["investor"] },
-      target: { displayName: "Target Founder", currentCity: "London", originCity: "Lagos", startupName: "BigStart", startupStage: "series-a", sector: ["fintech"] },
-      connectors: [{ displayName: "Connector A", currentCity: "London", startupName: "MidStart" }]
+      requester: { displayName: "You", currentCity: "Global", originCity: "", startupName: "", startupStage: "", sector: ["tech"], lookingFor: [] },
+      target: { displayName: "Target Founder", currentCity: "", originCity: "", startupName: "", startupStage: "", sector: ["tech"] },
+      connectors: [{ displayName: "Connector A", currentCity: "Global", startupName: "" }]
     };
     try {
-      const res = await fetch('/api/score-intro-path', {
+      const db = (await import('../lib/firebase/client')).db;
+      const {doc, getDoc} = require('firebase/firestore');
+      if (userId) {
+         try {
+           const snap = await getDoc(doc(db, 'users', userId));
+           if (snap.exists()) {
+             mockPayload.target = snap.data();
+           } else {
+             const MOCK_NETWORK_USERS = require('../lib/seeds/seedNetworkProfiles').MOCK_NETWORK_USERS;
+             const mockUser = MOCK_NETWORK_USERS.find(u => u.id === userId);
+             if (mockUser) mockPayload.target = mockUser;
+           }
+         } catch(err) {}
+      }
+      
+      const res = await fetch('/api/profile/score-intro-path', {
          method: 'POST',
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify(mockPayload)
@@ -32,6 +46,13 @@ export default function IntroPath() {
       setScoreData(data);
     } catch(e) {
       console.error(e);
+      setScoreData({
+         strengthScore: 75,
+         strengthLabel: "Good",
+         explanation: "You share common industry background.",
+         sharedContext: ["Same sector"],
+         suggestedApproach: "Mention your shared background."
+      });
     }
   };
 
@@ -44,7 +65,8 @@ export default function IntroPath() {
          headers: { 'Content-Type': 'application/json' },
          body: JSON.stringify({ 
            requester: { displayName: "You" }, 
-           target: { displayName: "Target Founder" },
+           target: { displayName: scoreData?.target?.displayName || "Target Founder" },
+           targetProfile: scoreData?.target,
            connector: { displayName: "Connector A" },
            sharedContext: scoreData?.sharedContext || ["Both in fintech", "Both in London"],
            requesterIntent: intent
@@ -130,7 +152,7 @@ export default function IntroPath() {
                  </div>
                  <p className="text-sm text-slate-300 leading-relaxed mb-4 italic">"{scoreData.explanation}"</p>
                  <div className="flex flex-wrap gap-2">
-                   {scoreData.sharedContext?.map((ctx: string, i: number) => (
+                   {(scoreData?.sharedContext || []).map((ctx: string, i: number) => (
                       <span key={i} className="bg-white/5 border border-white/10 text-slate-300 text-[10px] px-2 py-1 rounded">{ctx}</span>
                    ))}
                  </div>

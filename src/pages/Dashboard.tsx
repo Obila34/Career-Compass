@@ -51,10 +51,10 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="text-sm font-bold text-white">Founder Name {i}</p>
-                      <p className="text-xs text-slate-400">Fintech • YC • Lagos → SF</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Fintech • YC • Lagos → SF</p>
                     </div>
                   </div>
-                  <button className="text-sm font-medium text-orange-400 hover:text-orange-300">View path</button>
+                  <button className="text-sm font-medium text-indigo-400 hover:text-indigo-300 min-h-[44px] px-2 flex items-center justify-center">View path</button>
                 </div>
              ))}
           </div>
@@ -65,11 +65,11 @@ export default function Dashboard() {
           <div className="space-y-4">
              {/* Mock mapping of recent jobs */}
              {[1, 2, 3].map(i => (
-                <div key={i} className="flex flex-col p-4 border border-white/5 rounded-xl bg-white/5">
+                <div key={i} className="flex flex-col p-4 border border-white/5 rounded-xl bg-white/5 cursor-pointer hover:bg-white/10 transition-colors">
                    <p className="text-sm font-bold text-white">Senior Product Engineer</p>
                    <p className="text-xs text-slate-400 mt-1">Paystack • Remote (EMEA) • ₦40M - ₦60M</p>
                    <div className="mt-3 flex items-center gap-2">
-                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">98 Legit</span>
+                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">98 Score</span>
                      <span className="text-xs text-slate-400 flex items-center gap-1"><Users className="w-3 h-3" /> 2 warm paths</span>
                    </div>
                 </div>
