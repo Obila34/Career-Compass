@@ -2,34 +2,16 @@ import { GoogleGenAI } from "@google/genai";
 import { User } from "../../types";
 
 export async function optimiseProfile(rawProfile: Partial<User>) {
-      
-  
   const ai = new GoogleGenAI({});
   const modelId = "gemini-2.5-flash";
 
-  const prompt = `
-You are a professional career coach specialising in African and diaspora professionals navigating global job markets.
+  const systemPrompt = `You are an expert professional career coach specialising in African and diaspora professionals navigating global tech and corporate job markets.
+Your task is to optimise a job seeker's profile to improve ATS passing rates, surface undersold skills, use strong active language, and position their international background as a unique asset.
 
-A job seeker has just filled in their profile. Your job is to optimise it so it:
-1. Passes ATS keyword filters for their target roles
-2. Positions their diaspora background as an asset, not a liability
-3. Uses strong, active language that hiring managers respond to
-4. Surfaces skills and experience that may be undersold
-
-<raw_profile>
-Name: ${rawProfile.displayName}
-Current role: ${rawProfile.currentRole}
-Current company: ${rawProfile.currentCompany}
-Years of experience: ${rawProfile.yearsOfExperience}
-Skills: ${(rawProfile.skills || []).join(", ")}
-Bio: ${rawProfile.bio}
-Industries: ${(rawProfile.industries || []).join(", ")}
-Education: ${(rawProfile.education || []).map((e: any) => e.degree + ' at ' + e.institution).join("; ")}
-Origin: ${rawProfile.originCity} → Current: ${rawProfile.currentCity}
-</raw_profile>
-
-Produce an optimised version of each field. For each change, provide a one-line reason.
-Return ONLY valid JSON. No preamble, no markdown fences.
+Follow these rules:
+1. Provide concrete, highly professional rewrites for the headline and bio.
+2. Ensure you extract and suggest realistic, in-demand skills based on their background.
+3. Your output MUST be ONLY valid JSON matching exactly this schema:
 
 {
   "optimisedHeadline": string,
@@ -45,9 +27,35 @@ Return ONLY valid JSON. No preamble, no markdown fences.
   "profileStrengthAfter": number,
   "topThreeImprovements": string[]
 }
-  `.trim();
 
-  const result = await ai.models.generateContent({ model: modelId, contents: prompt });
+Do NOT include any preamble, markdown fences (\`\`\`json), or explanations.`;
+
+  const prompt = `Please optimise the following profile:
+
+<raw_profile>
+Name: ${rawProfile.displayName}
+Current role: ${rawProfile.currentRole}
+Current company: ${rawProfile.currentCompany}
+Years of experience: ${rawProfile.yearsOfExperience}
+Skills: ${(rawProfile.skills || []).join(", ")}
+Bio: ${rawProfile.bio}
+Industries: ${(rawProfile.industries || []).join(", ")}
+Education: ${(rawProfile.education || []).map((e: any) => e.degree + ' at ' + e.institution).join("; ")}
+Origin: ${rawProfile.originCity} -> Current: ${rawProfile.currentCity}
+</raw_profile>
+
+Return the response strictly as structured JSON applying the required optimisations.`;
+
+  const result = await ai.models.generateContent({ 
+    model: modelId, 
+    contents: [
+      { role: "user", parts: [{ text: prompt }] }
+    ],
+    config: {
+      systemInstruction: systemPrompt
+    }
+  });
+
   const text = result.text || "";
   return JSON.parse(text.replace(/```json|```/g, "").trim());
 }

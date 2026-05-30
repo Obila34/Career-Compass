@@ -22,6 +22,31 @@ export const MOCK_NETWORK_USERS = [
     isVerified: true,
     isMockProfile: true,
     profileCompleteness: 95,
+    experience: [
+      {
+        title: "Senior Product Manager",
+        company: "Flutterwave",
+        startYear: 2021,
+        endYear: null,
+        isCurrent: true,
+        description: "Leading the core payments infrastructure team."
+      },
+      {
+        title: "Product Manager",
+        company: "Interswitch",
+        startYear: 2018,
+        endYear: 2021,
+        isCurrent: false,
+        description: "Managed the rollout of new payment gateways."
+      }
+    ],
+    education: [
+      {
+        institution: "University of Ghana",
+        degree: "BSc Computer Science",
+        graduationYear: 2016
+      }
+    ]
   },
   {
     id: "mock_user_002",
@@ -43,6 +68,31 @@ export const MOCK_NETWORK_USERS = [
     isVerified: true,
     isMockProfile: true,
     profileCompleteness: 88,
+    experience: [
+      {
+        title: "Software Engineer",
+        company: "Andela",
+        startYear: 2022,
+        endYear: null,
+        isCurrent: true,
+        description: "Full-stack development for enterprise clients."
+      },
+      {
+        title: "Frontend Engineer",
+        company: "Kuda",
+        startYear: 2019,
+        endYear: 2022,
+        isCurrent: false,
+        description: "Built scalable web apps for digital banking."
+      }
+    ],
+    education: [
+      {
+        institution: "KNUST",
+        degree: "BSc Software Engineering",
+        graduationYear: 2018
+      }
+    ]
   },
   {
     id: "mock_user_003",
@@ -64,6 +114,23 @@ export const MOCK_NETWORK_USERS = [
     isVerified: true,
     isMockProfile: true,
     profileCompleteness: 92,
+    experience: [
+      {
+        title: "Site Reliability Engineer",
+        company: "Google",
+        startYear: 2020,
+        endYear: null,
+        isCurrent: true,
+        description: "Ensuring 99.999% uptime for Google Cloud services."
+      }
+    ],
+    education: [
+      {
+        institution: "University of Manchester",
+        degree: "MSc Advanced Computer Science",
+        graduationYear: 2019
+      }
+    ]
   },
   {
     id: "mock_user_004",
@@ -85,6 +152,23 @@ export const MOCK_NETWORK_USERS = [
     isVerified: true,
     isMockProfile: true,
     profileCompleteness: 90,
+    experience: [
+      {
+        title: "Data Scientist",
+        company: "Stripe",
+        startYear: 2021,
+        endYear: null,
+        isCurrent: true,
+        description: "Developing machine learning models for fraud detection."
+      }
+    ],
+    education: [
+      {
+        institution: "UC Berkeley",
+        degree: "MSc Data Science",
+        graduationYear: 2021
+      }
+    ]
   },
   {
     id: "mock_user_005",
@@ -106,6 +190,23 @@ export const MOCK_NETWORK_USERS = [
     isVerified: true,
     isMockProfile: true,
     profileCompleteness: 85,
+    experience: [
+      {
+        title: "Engineering Lead",
+        company: "Andela",
+        startYear: 2019,
+        endYear: null,
+        isCurrent: true,
+        description: "Managing a team of 15 distributed engineers."
+      }
+    ],
+    education: [
+      {
+        institution: "Obafemi Awolowo University",
+        degree: "BSc Computer Engineering",
+        graduationYear: 2014
+      }
+    ]
   },
   {
     id: "mock_user_006",
@@ -127,6 +228,23 @@ export const MOCK_NETWORK_USERS = [
     isVerified: true,
     isMockProfile: true,
     profileCompleteness: 93,
+    experience: [
+      {
+        title: "Product Lead",
+        company: "Chipper Cash",
+        startYear: 2020,
+        endYear: null,
+        isCurrent: true,
+        description: "Spearheading product expansion across Southern Africa."
+      }
+    ],
+    education: [
+      {
+        institution: "University of Cape Town",
+        degree: "BCom Information Systems",
+        graduationYear: 2016
+      }
+    ]
   },
   {
     id: "mock_user_007",
@@ -148,6 +266,16 @@ export const MOCK_NETWORK_USERS = [
     isVerified: true,
     isMockProfile: true,
     profileCompleteness: 87,
+    experience: [
+      {
+        title: "Senior Product Manager",
+        company: "Flutterwave",
+        startYear: 2022,
+        endYear: null,
+        isCurrent: true,
+        description: "Driving product strategy for MEA expansion."
+      }
+    ]
   },
   {
     id: "mock_user_008",
@@ -169,6 +297,16 @@ export const MOCK_NETWORK_USERS = [
     isVerified: true,
     isMockProfile: true,
     profileCompleteness: 82,
+    experience: [
+      {
+        title: "Analytics Engineer",
+        company: "Stripe",
+        startYear: 2021,
+        endYear: null,
+        isCurrent: true,
+        description: "Building scalable data pipelines."
+      }
+    ]
   },
   {
     id: "mock_user_009",
@@ -190,6 +328,16 @@ export const MOCK_NETWORK_USERS = [
     isVerified: true,
     isMockProfile: true,
     profileCompleteness: 80,
+    experience: [
+      {
+        title: "People Operations Manager",
+        company: "Deel",
+        startYear: 2022,
+        endYear: null,
+        isCurrent: true,
+        description: "Managing HR scaling strategies."
+      }
+    ]
   },
   {
     id: "mock_user_010",
@@ -211,6 +359,16 @@ export const MOCK_NETWORK_USERS = [
     isVerified: true,
     isMockProfile: true,
     profileCompleteness: 91,
-  },
+    experience: [
+      {
+        title: "Lead UX Designer",
+        company: "Kuda Bank",
+        startYear: 2020,
+        endYear: null,
+        isCurrent: true,
+        description: "Leading the design for the core mobile app."
+      }
+    ]
+  }
 ];
 

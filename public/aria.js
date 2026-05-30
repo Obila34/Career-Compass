@@ -1,0 +1,793 @@
+// ======================================
+// API KEYS (Fill these to enable full access)
+// ======================================
+const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY";
+const GOOGLE_TTS_KEY = "YOUR_GOOGLE_CLOUD_KEY";
+const GOOGLE_STT_KEY = "YOUR_GOOGLE_CLOUD_KEY";
+const FIRESTORE_PROJECT_ID = "your-firebase-project-id";
+const FIRESTORE_API_KEY = "YOUR_FIREBASE_API_KEY";
+const CURRENT_USER_ID = "USER_ID_HERE";
+
+(function() {
+  // Create root container to encapsulate UI
+  const root = document.createElement('div');
+  root.id = 'aria-coach-root';
+  document.body.appendChild(root);
+
+  // Inject Scoped Styles for the Coach Layer
+  const style = document.createElement('style');
+  style.textContent = `
+    #aria-coach-root {
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      z-index: 999999;
+      pointer-events: none;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: flex-end;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    #aria-coach-root * {
+      pointer-events: auto;
+      box-sizing: border-box;
+    }
+
+    /* Pill Badge */
+    #aria-coach-root .aria-pill {
+      position: absolute;
+      right: 90px;
+      bottom: 44px;
+      background: #1a5fa8;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transform: translateX(10px);
+      transition: all 0.3s ease;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(13,61,110,0.2);
+      white-space: nowrap;
+    }
+    #aria-coach-root .aria-pill.visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    /* Orb Button Container */
+    #aria-coach-root .aria-orb-container {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
+      width: 60px;
+      height: 60px;
+      transition: bottom 0.3s ease;
+    }
+
+    @media (max-width: 768px) {
+      #aria-coach-root .aria-orb-container {
+        right: 20px;
+        bottom: 88px; /* Offset for mobile bottom nav bars */
+        width: 56px;
+        height: 56px;
+      }
+      #aria-coach-root .aria-pill {
+        bottom: 108px;
+        right: 84px;
+      }
+    }
+
+    #aria-coach-root .aria-orb {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      background: radial-gradient(circle at center, #1a5fa8 0%, #0d3d6e 100%);
+      box-shadow: 0 0 0 8px rgba(55,138,221,0.12), 0 4px 20px rgba(13,61,110,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      position: relative;
+      z-index: 2;
+    }
+    
+    #aria-coach-root .aria-orb:hover {
+      transform: scale(1.05);
+    }
+
+    /* Orb Animations */
+    @keyframes ariaIdleBreathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+    #aria-coach-root .aria-orb.idle {
+      animation: ariaIdleBreathe 3s ease-in-out infinite;
+    }
+    
+    @keyframes ariaListenPulse {
+      0%, 100% { transform: scale(1.12); box-shadow: 0 0 0 8px rgba(226,75,74,0.12), 0 4px 20px rgba(226,75,74,0.4); background: radial-gradient(circle at center, #e24b4a 0%, #a63130 100%);}
+      50% { transform: scale(1.16); box-shadow: 0 0 0 12px rgba(226,75,74,0.2), 0 4px 25px rgba(226,75,74,0.5); }
+    }
+    #aria-coach-root .aria-orb.listening {
+      animation: ariaListenPulse 0.8s infinite;
+    }
+    
+    @keyframes ariaSpeakRing {
+      0% { box-shadow: 0 0 0 0 rgba(85, 183, 235, 0.4); }
+      100% { box-shadow: 0 0 0 20px rgba(85, 183, 235, 0); }
+    }
+    #aria-coach-root .aria-orb.speaking {
+      animation: ariaSpeakRing 1.5s infinite;
+    }
+
+    #aria-coach-root .aria-notification-dot {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 12px;
+      height: 12px;
+      background-color: #e24b4a;
+      border-radius: 50%;
+      border: 2px solid #0d3d6e;
+      display: none;
+      z-index: 3;
+    }
+
+    #aria-coach-root .aria-orb svg {
+      width: 26px;
+      height: 26px;
+      fill: white;
+    }
+
+    /* Chat Panel */
+    #aria-coach-root .aria-panel {
+      position: absolute;
+      right: 24px;
+      bottom: 100px;
+      width: 400px;
+      height: 560px;
+      background: #080d1a;
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(40px) scale(0.95);
+      transform-origin: bottom right;
+      transition: transform 0.38s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.38s ease;
+      z-index: 1;
+    }
+    #aria-coach-root .aria-panel.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    /* Desktop Slide-In Style for specific page contexts */
+    #aria-coach-root .aria-panel.side-panel {
+      bottom: 0;
+      right: 0;
+      height: 100vh;
+      width: 380px;
+      border-radius: 0;
+      transform: translateX(100%);
+      transform-origin: right center;
+    }
+    #aria-coach-root .aria-panel.side-panel.open {
+      transform: translateX(0);
+    }
+
+    /* Mobile Adjustments */
+    @media (max-width: 768px) {
+      #aria-coach-root .aria-panel {
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        border-radius: 20px 20px 0 0 !important;
+        transform: translateY(100%) !important;
+      }
+      #aria-coach-root .aria-panel.open {
+        transform: translateY(0) !important;
+      }
+      .aria-mobile-handle {
+        display: block !important;
+        width: 36px;
+        height: 4px;
+        background: #1a2740;
+        border-radius: 2px;
+        margin: 8px auto;
+      }
+    }
+    
+    .aria-mobile-handle { display: none; }
+
+    /* Panel Internals */
+    #aria-coach-root .aria-header {
+      padding: 16px;
+      border-bottom: 1px solid #1a2740;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #080d1a;
+      flex-shrink: 0;
+    }
+    #aria-coach-root .aria-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    #aria-coach-root .aria-status-dot {
+      width: 8px;
+      height: 8px;
+      background: #4ade80;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #4ade80;
+      animation: ariaOnlinePulse 2s infinite;
+    }
+    @keyframes ariaOnlinePulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    #aria-coach-root .aria-title {
+      color: white;
+      font-weight: 600;
+      font-size: 15px;
+      margin: 0;
+    }
+    #aria-coach-root .aria-subtitle {
+      color: #85B7EB;
+      font-size: 12px;
+      margin: 0;
+    }
+    #aria-coach-root .aria-close-btn {
+      background: none;
+      border: none;
+      color: #64748b;
+      font-size: 24px;
+      cursor: pointer;
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #aria-coach-root .aria-close-btn:hover { color: white; }
+
+    /* Messages */
+    #aria-coach-root .aria-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overscroll-behavior: none;
+    }
+    #aria-coach-root .aria-bubble {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.5;
+      word-wrap: break-word;
+    }
+    #aria-coach-root .aria-bubble-ai {
+      background: #0f1d35;
+      color: #85B7EB;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    #aria-coach-root .aria-bubble-user {
+      background: #1a3a6e;
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    /* Typing Dots */
+    #aria-coach-root .aria-typing {
+      display: flex;
+      gap: 4px;
+      padding: 8px 12px;
+      align-items: center;
+      height: 36px;
+      border-radius: 16px;
+    }
+    #aria-coach-root .aria-typing-dot {
+      width: 5px;
+      height: 5px;
+      background: #85B7EB;
+      border-radius: 50%;
+      animation: ariaTypingBounce 1.4s infinite ease-in-out both;
+    }
+    #aria-coach-root .aria-typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    #aria-coach-root .aria-typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes ariaTypingBounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+
+    /* Input Bar */
+    #aria-coach-root .aria-input-container {
+      padding: 12px 16px;
+      background: #080d1a;
+      border-top: 1px solid #1a2740;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    #aria-coach-root .aria-input {
+      flex: 1;
+      background: #0f1d35;
+      border: 1px solid #1a2740;
+      border-radius: 24px;
+      padding: 12px 16px;
+      color: white;
+      font-size: 16px; /* Avoid iOS native zoom */
+      outline: none;
+      min-height: 44px;
+    }
+    #aria-coach-root .aria-input:focus { border-color: #378add; }
+    
+    #aria-coach-root .aria-btn {
+      background: none;
+      border: none;
+      min-width: 44px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+    #aria-coach-root .aria-btn:hover { background: #1a2740; }
+    #aria-coach-root .aria-btn svg {
+      width: 20px;
+      height: 20px;
+      fill: #85B7EB;
+    }
+    #aria-coach-root .aria-mic-btn.active svg {
+      fill: #e24b4a;
+    }
+    
+    /* Local Speech Transcript Overlay */
+    #aria-coach-root .aria-transcript-preview {
+      position: absolute;
+      bottom: 80px;
+      left: 16px;
+      right: 16px;
+      background: rgba(15, 29, 53, 0.95);
+      backdrop-filter: blur(4px);
+      color: white;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-style: italic;
+      display: none;
+      border: 1px solid #1a2740;
+    }
+  `;
+  document.head.appendChild(style);
+
+  // Construct DOM structure
+  root.innerHTML = `
+    <div class="aria-pill" id="aria-pill">Get profile tips ↗</div>
+    <div class="aria-panel" id="aria-panel">
+      <div class="aria-mobile-handle"></div>
+      <div class="aria-header">
+        <div class="aria-header-left">
+          <div class="aria-status-dot"></div>
+          <div>
+            <p class="aria-title">Aria</p>
+            <p class="aria-subtitle">Career Coach</p>
+          </div>
+        </div>
+        <button class="aria-close-btn" id="aria-close" aria-label="Close">×</button>
+      </div>
+      <div class="aria-messages" id="aria-messages"></div>
+      <div class="aria-transcript-preview" id="aria-transcript">Listening...</div>
+      <div class="aria-input-container">
+        <input type="text" class="aria-input" id="aria-input" placeholder="Ask Aria..." autocomplete="off">
+        <button class="aria-btn aria-mic-btn" id="aria-mic" aria-label="Microphone">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-240Zm-40 520v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T480-320q83 0 141.5-58.5T680-520h80q0 105-68 184t-172 93v123h-80Zm40-360q17 0 28.5-11.5T520-520v-240q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v240q0 17 11.5 28.5T480-480Z"/></svg>
+        </button>
+        <button class="aria-btn" id="aria-send" aria-label="Send">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"/></svg>
+        </button>
+      </div>
+    </div>
+    
+    <div class="aria-orb-container" id="aria-orb-container">
+      <div class="aria-notification-dot" id="aria-notif-dot"></div>
+      <div class="aria-orb idle" id="aria-orb">
+         <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px"><path d="M480-400q-50 0-85-35t-35-85v-240q0-50 35-85t85-35q50 0 85 35t35 85v240q0 50-35 85t-85 35Zm0-240Zm-40 520v-123q-104-14-172-93t-68-184h80q0 83 58.5 141.5T480-320q83 0 141.5-58.5T680-520h80q0 105-68 184t-172 93v123h-80Zm40-360q17 0 28.5-11.5T520-520v-240q0-17-11.5-28.5T480-800q-17 0-28.5 11.5T440-760v240q0 17 11.5 28.5T480-480Z"/></svg>
+      </div>
+    </div>
+  `;
+
+  // ======================================
+  // HOST PLATFORM DATA ENGINE 
+  // ======================================
+  
+  const DEMO_PROFILE = {
+    user: {
+      name: "User",
+      title: "Product Designer",
+      experience_years: 4,
+      skills: ["Figma", "UX Research", "Prototyping", "Design Systems"],
+      location: "Nairobi, Kenya",
+      profile_score: 74,
+      profile_completion_gaps: ["portfolio link missing", "no summary written"]
+    },
+    activity: {
+      saved_jobs: [
+        { title: "Senior Product Designer", company: "Safaricom", match_score: 91 },
+        { title: "UX Lead", company: "Andela", match_score: 87 }
+      ],
+      applied_jobs: [
+        { title: "Product Designer", company: "M-KOPA", status: "under review", days_ago: 3 }
+      ],
+      recently_viewed_jobs: [
+        { title: "Product Designer", company: "Cellulant", salary: "KES 180-220k" }
+      ],
+      search_history: ["remote design jobs", "senior product designer nairobi"]
+    },
+    platform: {
+       current_page: window.location.pathname.includes("profile") ? "profile" : "job_listings",
+       current_job_viewed: null
+    }
+  };
+
+  // Set fallback global if app didn't inject
+  if (!window.PLATFORM_CONTEXT) {
+     window.PLATFORM_CONTEXT = DEMO_PROFILE;
+  }
+
+  // ======================================
+  // COACH VIRTUAL STATE
+  // ======================================
+  const conversationHistory = [];
+  let isOpen = false;
+  let isFirstVisit = !localStorage.getItem('aria_visited');
+  let isSpeaking = false;
+  let isRecording = false;
+
+  const orb = document.getElementById('aria-orb');
+  const panel = document.getElementById('aria-panel');
+  const closeBtn = document.getElementById('aria-close');
+  const messagesContainer = document.getElementById('aria-messages');
+  const inputEl = document.getElementById('aria-input');
+  const sendBtn = document.getElementById('aria-send');
+  const micBtn = document.getElementById('aria-mic');
+  const notifDot = document.getElementById('aria-notif-dot');
+  const transcriptEl = document.getElementById('aria-transcript');
+  const pillEl = document.getElementById('aria-pill');
+
+  // First Visit Notif
+  if (isFirstVisit) {
+    notifDot.style.display = 'block';
+  }
+
+  if (window.PLATFORM_CONTEXT.platform.current_page === 'profile') {
+    setTimeout(() => {
+      pillEl.classList.add('visible');
+      setTimeout(() => pillEl.classList.remove('visible'), 6000);
+    }, 1000);
+  }
+
+  // Toggling
+  orb.addEventListener('click', toggleCoach);
+  closeBtn.addEventListener('click', toggleCoach);
+
+  function toggleCoach() {
+    isOpen = !isOpen;
+    if (isOpen) {
+      panel.classList.add('open');
+      orb.style.opacity = '0';
+      orb.style.pointerEvents = 'none';
+
+      if (isFirstVisit) {
+        isFirstVisit = false;
+        notifDot.style.display = 'none';
+        localStorage.setItem('aria_visited', 'true');
+      }
+
+      // Side-Panel style activation if reading a Job Detail
+      if (window.PLATFORM_CONTEXT.platform.current_page === "job_detail" && window.innerWidth >= 768) {
+        panel.classList.add('side-panel');
+        document.body.style.marginRight = '380px';
+      }
+
+      if (window.innerWidth < 768) {
+        document.body.style.overflow = 'hidden';
+      }
+
+      if (conversationHistory.length === 0) {
+        sendContextAwareGreeting();
+      }
+
+      fireAnalyticsEvent('aria_session_open', {
+        profile_score: window.PLATFORM_CONTEXT.user.profile_score,
+        page: window.PLATFORM_CONTEXT.platform.current_page
+      });
+
+    } else {
+      panel.classList.remove('open');
+      orb.style.opacity = '1';
+      orb.style.pointerEvents = 'auto';
+
+      if (panel.classList.contains('side-panel')) {
+        document.body.style.marginRight = '0';
+      }
+      document.body.style.overflow = '';
+      stopTTS();
+    }
+  }
+
+  // ======================================
+  // DOM UPDATES (Text)
+  // ======================================
+  sendBtn.addEventListener('click', handleSend);
+  inputEl.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleSend();
+  });
+
+  function handleSend() {
+    const text = inputEl.value.trim();
+    if (!text) return;
+    inputEl.value = '';
+    appendMessage(text, 'user');
+    dispatchGeminiRequest(text);
+  }
+
+  function appendMessage(text, role) {
+    const bubble = document.createElement('div');
+    bubble.className = `aria-bubble aria-bubble-${role}`;
+    bubble.textContent = text;
+    messagesContainer.appendChild(bubble);
+    scrollToBottom();
+  }
+
+  function showTyping() {
+    const bubble = document.createElement('div');
+    bubble.className = 'aria-bubble aria-bubble-ai';
+    bubble.id = 'aria-typing';
+    bubble.innerHTML = '<div class="aria-typing"><div class="aria-typing-dot"></div><div class="aria-typing-dot"></div><div class="aria-typing-dot"></div></div>';
+    messagesContainer.appendChild(bubble);
+    scrollToBottom();
+  }
+
+  function removeTyping() {
+    const typing = document.getElementById('aria-typing');
+    if (typing) typing.remove();
+  }
+
+  function scrollToBottom() {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+  }
+
+  // ======================================
+  // GOOGLE AI GEMINI LOGIC
+  // ======================================
+  function getDynamicSystemPrompt() {
+    const ctx = window.PLATFORM_CONTEXT;
+    return `
+You are Aria, a warm and expert career coach embedded inside a jobs platform built on Google infrastructure.
+You have live access to the user's data pulled from Google Firestore:
+
+USER PROFILE: ${JSON.stringify(ctx.user)}
+PLATFORM ACTIVITY: ${JSON.stringify(ctx.activity)}
+CURRENT CONTEXT: Page is ${ctx.platform.current_page}. Job currently viewed: ${JSON.stringify(ctx.platform.current_job_viewed || "none")}
+
+Use this data naturally and proactively. Reference specific jobs, match scores, profile gaps, and search history without making the user repeat themselves.
+Voice-first rules — this is spoken aloud via Google Cloud Text-to-Speech: Short natural sentences only. No markdown. No bullet points. No asterisks. No numbered lists. 2-4 sentences per response. End each turn with one focused question. Be warm, direct, and honest like a trusted mentor.
+`;
+  }
+
+  function sendContextAwareGreeting() {
+    const cPage = window.PLATFORM_CONTEXT.platform.current_page;
+    const uName = window.PLATFORM_CONTEXT.user.name;
+    const job = window.PLATFORM_CONTEXT.platform.current_job_viewed;
+
+    let txt = "";
+    if (cPage === "job_detail" && job) {
+      txt = `Hey ${uName} — I can see you're looking at the ${job.title} role at ${job.company}. Want me to break down how strong a fit you are for it?`;
+    } else if (cPage === "profile") {
+      txt = `Hey ${uName}! Your profile is sitting at ${window.PLATFORM_CONTEXT.user.profile_score}% — I spotted a couple of quick wins that could really boost your visibility. Want to go through them?`;
+    } else if (cPage === "applications" && window.PLATFORM_CONTEXT.activity.applied_jobs.length > 0) {
+       const app = window.PLATFORM_CONTEXT.activity.applied_jobs[0];
+       txt = `Hey ${uName}. Your ${app.company} application has been under review for ${app.days_ago} days — that's totally normal. Want to talk through what to do next?`;
+    } else {
+       txt = `Hey ${uName}! With your background in ${window.PLATFORM_CONTEXT.user.title} and your recent activity on the platform, I think we've got some good moves to make. What's on your mind?`;
+    }
+
+    conversationHistory.push({ role: "model", parts: [{ text: txt }] });
+    appendMessage(txt, 'ai');
+    playTTS(txt);
+  }
+
+  async function dispatchGeminiRequest(text) {
+    conversationHistory.push({ role: "user", parts: [{ text }] });
+    showTyping();
+    stopTTS();
+    fireAnalyticsEvent('aria_message_sent', { type: 'text', turns: conversationHistory.length });
+
+    // Safe Fallback for Demo without Auth Secrets Compiled
+    if(GEMINI_API_KEY === "YOUR_GEMINI_API_KEY") {
+       setTimeout(() => {
+         removeTyping();
+         const fallbackText = "I'm in demo mode because my Gemini API key hasn't been configured yet. Connect my keys and we'll be ready to get to work!";
+         conversationHistory.push({ role: "model", parts: [{ text: fallbackText }]});
+         appendMessage(fallbackText, 'ai');
+         playTTS(fallbackText);
+       }, 1000);
+       return;
+    }
+
+    try {
+      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: getDynamicSystemPrompt() }] },
+          contents: conversationHistory,
+          generationConfig: { maxOutputTokens: 300, temperature: 0.8 }
+        })
+      });
+      
+      removeTyping();
+      const json = await resp.json();
+      if(json.candidates && json.candidates[0].content) {
+        const outTxt = json.candidates[0].content.parts[0].text;
+        conversationHistory.push({ role: "model", parts: [{ text: outTxt }] });
+        appendMessage(outTxt, 'ai');
+        playTTS(outTxt);
+      } else {
+         appendMessage("Hm, I had a little trouble getting a response. Can you try saying that again?", 'ai');
+      }
+    } catch(e) {
+      removeTyping();
+      console.error("Gemini Error:", e);
+      appendMessage("Oops, looks like my connection dropped. Let me catch my breath.", 'ai');
+    }
+  }
+
+  // ======================================
+  // AUDIO - TEXT TO SPEECH (TTS)
+  // ======================================
+  let currentAudio = null;
+
+  async function playTTS(text) {
+    orb.classList.remove('idle');
+    orb.classList.add('speaking');
+    
+    if (GOOGLE_TTS_KEY === "YOUR_GOOGLE_CLOUD_KEY") {
+       // Fallback to Native Speech Synthesis
+       if(window.speechSynthesis) {
+         const u = new SpeechSynthesisUtterance(text);
+         u.lang = 'en-US';
+         u.rate = 1.0;
+         u.onend = () => {
+           orb.classList.remove('speaking');
+           orb.classList.add('idle');
+         };
+         window.speechSynthesis.speak(u);
+       }
+       return;
+    }
+
+    try {
+      const res = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${GOOGLE_TTS_KEY}`, {
+        method: 'POST',
+        body: JSON.stringify({
+          input: { text },
+          voice: { languageCode: "en-US", name: "en-US-Neural2-F" },
+          audioConfig: { audioEncoding: "MP3", speakingRate: 0.95 }
+        })
+      });
+      const data = await res.json();
+      if(data.audioContent) {
+        currentAudio = new Audio("data:audio/mp3;base64," + data.audioContent);
+        currentAudio.onended = () => {
+           orb.classList.remove('speaking');
+           orb.classList.add('idle'); 
+        };
+        currentAudio.play();
+      }
+    } catch(e) {
+       console.error("TTS output failed", e);
+       orb.classList.remove('speaking');
+       orb.classList.add('idle');
+    }
+  }
+
+  function stopTTS() {
+    if(currentAudio) { currentAudio.pause(); currentAudio = null; }
+    if(window.speechSynthesis) window.speechSynthesis.cancel();
+    orb.classList.remove('speaking');
+    orb.classList.add('idle');
+  }
+
+  // ======================================
+  // AUDIO - SPEECH TO TEXT (STT) 
+  // ======================================
+  let recognition = null;
+  if('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    recognition = new SpeechRec();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onstart = () => {
+      isRecording = true;
+      micBtn.classList.add('active');
+      orb.classList.add('listening');
+      transcriptEl.style.display = 'block';
+      stopTTS();
+    };
+
+    recognition.onresult = (e) => {
+      let trans = "";
+      for(let i=e.resultIndex; i<e.results.length; i++) trans += e.results[i][0].transcript;
+      transcriptEl.textContent = trans || "Listening...";
+    };
+
+    recognition.onend = () => {
+      isRecording = false;
+      micBtn.classList.remove('active');
+      orb.classList.remove('listening');
+      transcriptEl.style.display = 'none';
+
+      if(transcriptEl.textContent && transcriptEl.textContent !== "Listening...") {
+         const final = transcriptEl.textContent;
+         appendMessage(final, "user");
+         dispatchGeminiRequest(final);
+      }
+      transcriptEl.textContent = "Listening...";
+    };
+  }
+
+  micBtn.addEventListener('click', () => {
+    if(isRecording) {
+      if(recognition) recognition.stop();
+    } else {
+      if(recognition) {
+         transcriptEl.textContent = "Listening...";
+         recognition.start();
+      } else {
+         alert('Speech recognition is not supported in your browser.');
+      }
+    }
+  });
+
+  // GA Tracking Hook (Silent fallback if no tag manager)
+  function fireAnalyticsEvent(event, properties) {
+    if(typeof window.gtag === 'function') {
+       window.gtag('event', event, properties);
+    }
+  }
+
+  // Viewport keyboard sync mapping for mobile devices
+  if(window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      if(isOpen && window.innerWidth < 768) {
+         panel.style.height = window.visualViewport.height + "px";
+         scrollToBottom();
+      }
+    });
+  }
+
+})();
