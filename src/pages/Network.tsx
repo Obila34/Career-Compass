@@ -77,12 +77,12 @@ export default function Network() {
                 <Building2 className="w-3.5 h-3.5 opacity-70" /> <span>{user.startupName} • {(user.accelerators || []).join(', ')}</span>
               </div>
               <div className="flex items-center gap-2 text-xs text-slate-300">
-                <Target className="w-3.5 h-3.5 opacity-70" /> <span>Looking for: {(user.coreNeeds || []).join(', ')}</span>
+                <Target className="w-3.5 h-3.5 opacity-70" /> <span>Looking for: {(user.lookingFor || []).join(', ')}</span>
               </div>
             </div>
 
             <div className="mt-5 pt-4 border-t border-white/10 flex items-center justify-between">
-              <span className="text-xs text-slate-400 font-medium tracking-wide">{(user.connectionPaths || []).length} mutual connections</span>
+              <span className="text-xs text-slate-400 font-medium tracking-wide">3 mutual connections</span>
               <Link to={`/network/${user.id}/intro`} className="text-sm font-semibold text-orange-400 hover:text-orange-300 hover:underline">
                 Find intro path
               </Link>

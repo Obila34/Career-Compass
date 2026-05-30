@@ -55,7 +55,7 @@ export default function JobsBoard() {
                     </p>
                   </div>
                   <div className="hidden md:flex bg-emerald-500/10 text-emerald-400 px-2.5 py-1 rounded-md text-[10px] uppercase tracking-widest font-bold items-center border border-emerald-500/20">
-                    {job.score} Legitimacy
+                    {job.legitimacyScore || 0} Legitimacy
                   </div>
                 </div>
 

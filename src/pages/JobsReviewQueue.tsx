@@ -59,15 +59,15 @@ export default function JobsReviewQueue() {
                   <p className="text-xs text-slate-400 mt-0.5">{job.company}</p>
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded w-max text-[10px] font-bold uppercase tracking-widest border border-white/10 ${job.score >= 80 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                    {job.score} / 100
+                  <span className={`inline-flex items-center px-2.5 py-1 rounded w-max text-[10px] font-bold uppercase tracking-widest border border-white/10 ${(job.legitimacyScore || 0) >= 80 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                    {job.legitimacyScore || 0} / 100
                   </span>
                 </td>
                 <td className="px-6 py-4 max-w-xs truncate">
-                  {job.flags.length > 0 ? (
+                  {(job.legitimacyFlags || []).length > 0 ? (
                     <div className="flex items-center gap-1.5 text-red-400">
                       <AlertTriangle className="w-4 h-4 opacity-80" />
-                      <span className="truncate">{job.flags.join(', ')}</span>
+                      <span className="truncate">{(job.legitimacyFlags || []).join(', ')}</span>
                     </div>
                   ) : (
                     <span className="text-slate-500 italic">None</span>
